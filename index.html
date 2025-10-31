@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Board + Ball (scalable, no modules)</title>
+  <style>
+    body {
+      margin: 0;
+      background: #fff;
+      overflow: hidden;
+    }
+  </style>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- three.js (global) -->
+  <script src="three.js"></script>
+
+  <!-- App files (globals via window.Game) – ORDER MATTERS -->
+  <script src="js/constants.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/scene.js"></script>
+
+  <!-- Entities -->
+  <script src="js/entities/Board.js"></script>
+  <script src="js/entities/Walls.js"></script>
+  <script src="js/entities/Ball.js"></script>
+  <script src="js/entities/Platform.js"></script>
+  <script src="js/entities/Pillars.js"></script>
+  <script src="js/entities/SkullCluster.js"></script>
+  <script src="js/entities/Horseman.js"></script>
+  <script src="js/entities/HorsemenGroup.js"></script>
+
+  <!-- Systems -->
+  <script src="js/physics.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/debuffs.js"></script>
+  <script src="js/hud.js"></script>
+  <script src="js/abilities.js"></script>
+
+  <!-- Entry point -->
+  <script src="js/main.js"></script>
+</head>
+
+<body style="margin:0; background:#000; overflow:hidden;">
+  <div id="game-over-overlay">
+    <div class="game-over-content">
+      <h1>Game Over</h1>
+      <button id="restart-btn">Restart</button>
+    </div>
+  </div>
+
+  <!-- Player frame HUD (top-left) -->
+  <div id="player-frame">
+    <div class="player-portrait">
+      <div class="player-portrait-inner"></div>
+      <div class="player-level">1</div>
+    </div>
+
+    <div class="player-bars">
+      <div class="player-name">Player</div>
+
+      <div class="bar hp-bar">
+        <div class="bar-fill hp-fill"></div>
+        <div class="bar-text hp-text">100</div>
+      </div>
+
+      <div class="bar mana-bar">
+        <div class="bar-fill mana-fill"></div>
+        <div class="bar-text mana-text">100</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- debuff HUD (top-right) -->
+  <div id="hud-root">
+    <div id="debuff-bar"></div>
+  </div>
+  <script>
+    Game.init();
+    Game.animate();
+  </script>
+</body>
+
+</html>

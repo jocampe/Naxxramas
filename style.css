@@ -1,0 +1,364 @@
+#hud-root {
+    position: fixed;
+    top: 10px;
+    right: 30px;
+    padding: 12px;
+    pointer-events: none;
+    /* we don't want this to block clicks/drags on canvas */
+    font-family: system-ui, sans-serif;
+    color: #fff;
+    z-index: 9999;
+}
+
+#debuff-bar {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+}
+
+.debuff-icon {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    color: #fff;
+    pointer-events: none;
+}
+
+.debuff-stack {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+.debuff-icon {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.debuff-stack {
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.debuff-timer {
+    position: absolute;
+    bottom: -12px;
+    font-size: 10px;
+    color: #fff;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+/* === PLAYER FRAME (top-left) === */
+
+#player-frame {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    color: #fff;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    z-index: 10000;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.7));
+}
+
+/* portrait container */
+.player-portrait {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ffd27a 0%, #c48a2d 60%, #5a3a00 100%);
+    border: 2px solid #2a2a2a;
+    box-shadow:
+        0 0 8px rgba(0, 0, 0, 0.8) inset,
+        0 0 4px rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* "ball" placeholder portrait */
+.player-portrait-inner {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ffd27a 0%, #cc9933 40%, #7a4a00 80%);
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.8) inset;
+}
+
+/* little level badge bottom-left */
+.player-level {
+    position: absolute;
+    left: -6px;
+    bottom: -6px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #ffec7a 0%, #bf8a00 70%);
+    border: 2px solid #2a2a2a;
+    font-size: 12px;
+    line-height: 20px;
+    font-weight: 600;
+    color: #000;
+    text-align: center;
+    box-shadow:
+        0 0 4px rgba(0, 0, 0, 0.9),
+        0 0 2px rgba(255, 255, 255, 0.3) inset;
+}
+
+/* right side (name + bars) */
+.player-bars {
+    display: flex;
+    flex-direction: column;
+    margin-left: 8px;
+    min-width: 140px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(0, 0, 0, 0.8);
+    border-radius: 4px;
+    padding: 4px 6px 6px;
+    box-shadow:
+        0 0 10px rgba(0, 0, 0, 0.9),
+        0 0 2px rgba(255, 255, 255, 0.15) inset;
+}
+
+/* top line: player name */
+.player-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffeb6a;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+    text-align: center;
+    margin-bottom: 4px;
+}
+
+.bar {
+    position: relative;
+    width: 140px;
+    height: 14px;
+    border-radius: 2px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.8) inset;
+    overflow: hidden;
+    margin-bottom: 4px;
+    font-family: inherit;
+}
+
+/* fill behind */
+.bar-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    border-radius: 2px;
+    box-shadow:
+        0 0 6px rgba(0, 0, 0, 0.8) inset,
+        0 0 6px rgba(255, 255, 255, 0.2);
+    transition: width 0.15s linear;
+}
+
+/* HP = green */
+.hp-bar .hp-fill {
+    background: linear-gradient(#2eff2e 0%, #109010 60%, #064006 100%);
+}
+
+/* Mana = blue */
+.mana-bar .mana-fill {
+    background: linear-gradient(#6a7bff 0%, #2a32aa 60%, #0a0a40 100%);
+    margin-bottom: 0;
+}
+
+/* text overlay */
+.bar-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 14px;
+    /* same as bar height for vertical centering */
+    color: #fff;
+    text-align: center;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    user-select: none;
+}
+
+
+/* === EXISTING DEBUFF HUD (top-right) === */
+
+#hud-root {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    padding: 12px;
+    pointer-events: none;
+    z-index: 10000;
+    font-family: system-ui, sans-serif;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+#debuff-bar {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+}
+
+.debuff-icon {
+    width: 32px;
+    height: 32px;
+    background: #aaa;
+    border-radius: 4px;
+    border: 2px solid rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    pointer-events: none;
+}
+
+.debuff-stack {
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+.debuff-timer {
+    position: absolute;
+    bottom: -12px;
+    font-size: 10px;
+    line-height: 1;
+    color: #fff;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+    width: 100%;
+    text-align: center;
+    pointer-events: none;
+}
+
+/* Grey-out scene: apply to the canvas when dead */
+body.dim-scene canvas {
+  filter: grayscale(60%) brightness(60%);
+}
+
+/* Game Over overlay full-screen */
+#game-over-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(20,20,20,0.75);
+  z-index: 100000;
+  color: #fff;
+  font-family: system-ui, sans-serif;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  flex-direction: column;
+}
+
+.game-over-content {
+  background: rgba(0,0,0,0.6);
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  padding: 24px 32px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+  min-width: 200px;
+}
+
+.game-over-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-shadow: 0 0 8px rgba(0,0,0,0.9);
+  color: #fff;
+}
+
+.restart-btn {
+  background: #444;
+  border: 0;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 16px;
+  padding: 10px 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+}
+
+.restart-btn:hover {
+  background: #666;
+}
+
+#abilities-bar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  z-index: 500;
+}
+
+.ability-slot {
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  border: 2px solid #222;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-family: sans-serif;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.ability-slot:hover {
+  transform: scale(1.05);
+  filter: brightness(1.2);
+}
+
+.ability-slot .ability-label {
+  font-size: 18px;
+  position: absolute;
+  bottom: 4px;
+  right: 6px;
+  opacity: 0.8;
+}
+
+.ability-slot .cooldown {
+  position: absolute;
+  font-size: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ability-slot.on-cooldown {
+  filter: grayscale(60%) brightness(0.7);
+}
+
