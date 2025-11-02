@@ -14,11 +14,9 @@
   function getExplicitTarget(playerObj, range) {
     const t = Game.State.currentTarget;
     if (!t || !t.unit || !t.root) {
-      console.log("[AbilityDefs] no current target selected");
       return null;
     }
     if (t.unit.hp <= 0) {
-      console.log("[AbilityDefs] target is dead");
       return null;
     }
 
@@ -30,7 +28,6 @@
     const dist = Math.sqrt(dx * dx + dz * dz);
 
     if (dist > range) {
-      console.log("[AbilityDefs] target out of range:", dist.toFixed(2), ">", range);
       return null;
     }
 
@@ -62,7 +59,6 @@
           amount: 15
         });
 
-        console.log("[AbilityDefs] MELEE hit", target.name, "for 15");
         return { ok: true };
       }
     };
@@ -89,7 +85,6 @@
             this.costPower
           )
         ) {
-          console.log("[AbilityDefs] not enough power for CAST");
           return { ok: false, reason: "Not enough power" };
         }
 
@@ -99,7 +94,6 @@
           amount: 30
         });
 
-        console.log("[AbilityDefs] CAST hit", target.name, "for 30");
         return { ok: true };
       }
     };
@@ -120,7 +114,6 @@
             this.costPower
           )
         ) {
-          console.log("[AbilityDefs] not enough power to HEAL");
           return { ok: false, reason: "Not enough power" };
         }
 
@@ -129,7 +122,6 @@
           amount: 25
         });
 
-        console.log("[AbilityDefs] HEAL restored 25 HP to player");
         return { ok: true };
       }
     };

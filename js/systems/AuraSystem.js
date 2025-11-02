@@ -121,15 +121,6 @@
 
       const dist = distanceXZ(pPos, hPos);
 
-      // debug distance
-      console.log(
-        "[AuraSystem] dist to",
-        horse.name || horse.debuffId,
-        "=",
-        dist.toFixed(1),
-        "(radius", AURA_RADIUS, ")"
-      );
-
       return dist <= AURA_RADIUS;
     }
 

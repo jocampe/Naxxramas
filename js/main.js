@@ -200,7 +200,6 @@
 
     // Init AuraSystem so it can start tracking stacks on player
     if (Game.State.systems.aura && Game.State.systems.aura.init) {
-      console.log("[main] Initializing AuraSystem...");
       Game.State.systems.aura.init({
         playerUnit: Game.State.playerUnit,
         horsemen: Game.State.horsemen
@@ -231,9 +230,6 @@
     const restartBtn = document.getElementById("restart-btn");
     if (restartBtn) {
       restartBtn.addEventListener("click", function () {
-        console.log(
-          "restart clicked (TODO: implement Game reset)"
-        );
       });
     }
 
@@ -323,8 +319,6 @@
     if (gameActive &&
       Game.State.systems.aura &&
       Game.State.systems.aura.update) {
-
-      console.log("[main] calling AuraSystem.update dt=", dt.toFixed(3));
 
       Game.State.systems.aura.update(dt, {
         playerUnit: Game.State.playerUnit,

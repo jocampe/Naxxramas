@@ -20,10 +20,10 @@
         name: "Sir Zeliek",
         corner: "NE",
         colorMain: 0x1a1a1a,
-        colorTrim: 0xffffff, // purple
+        colorTrim: 0xffffff, // white
         weaponType: "sword",
         debuffId: "shadow",
-        debuffColor: "#0xffffff",
+        debuffColor: "#ffffff",
         position: { x: cornerOffset, z: cornerOffset }
       },
       {
