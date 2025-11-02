@@ -9,7 +9,6 @@
         let _enabled = false;
 
         function init(ctx) {
-            console.log("[TargetSystem] init() called with ctx:", ctx);
 
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
@@ -28,7 +27,6 @@
             if (e.button !== 0) return;
 
             if (!Game.State.camera || !Game.State.renderer) {
-                console.warn("[TargetSystem] missing camera/renderer in Game.State");
                 return;
             }
 
@@ -52,32 +50,26 @@
             }
 
             if (!candidates.length) {
-                console.warn("[TargetSystem] no clickable roots on horsemen");
                 clearTarget();
                 return;
             }
 
             const intersects = raycaster.intersectObjects(candidates, true);
-            console.log("[TargetSystem] intersects length:", intersects.length);
 
             if (!intersects.length) {
-                console.log("[TargetSystem] click -> no intersection with horsemen, clearing target");
                 clearTarget();
                 return;
             }
 
             // we hit something, try to resolve which horseman that belongs to
             const hitObj = intersects[0].object;
-            console.log("[TargetSystem] first hit object:", hitObj.name || hitObj.type, hitObj);
 
             const picked = findHorsemanByObject(hitObj);
             if (!picked) {
-                console.log("[TargetSystem] couldn't resolve hit back to a horseman, clearing target");
                 clearTarget();
                 return;
             }
 
-            console.log("[TargetSystem] picked horseman:", picked.name, picked);
 
             // assign global target
             Game.State.currentTarget = picked;
@@ -85,10 +77,8 @@
             // update HUD now
             if (Game.HUD && Game.HUD.setTargetUnit) {
                 if (picked.unit) {
-                    console.log("[TargetSystem] -> HUD.setTargetUnit", picked.unit, picked.name);
                     Game.HUD.setTargetUnit(picked.unit, picked.name || "Enemy");
                 } else {
-                    console.warn("[TargetSystem] picked horseman has no .unit");
                 }
             } else {
                 console.warn("[TargetSystem] HUD.setTargetUnit missing");
@@ -114,7 +104,6 @@
         }
 
         function clearTarget() {
-            console.log("[TargetSystem] clearTarget()");
 
             Game.State.currentTarget = null;
 
@@ -129,7 +118,6 @@
         }
 
         function destroy() {
-            console.log("[TargetSystem] destroy()");
             _enabled = false;
             document.removeEventListener("mousedown", onMouseDown);
         }

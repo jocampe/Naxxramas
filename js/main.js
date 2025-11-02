@@ -50,8 +50,6 @@
     Game.State.arena = Game.SceneBuilders.Arena(scene);
 
     // Player visual (ball)
-    // Expected return of PlayerBall: an object with .mesh AND movement state
-    // We'll store that whole object as playerMesh
     const playerVisual = Game.SceneBuilders.PlayerBall(scene);
     Game.State.playerMesh = playerVisual;
 
@@ -60,8 +58,8 @@
     // Gameplay Units (stats)
     // -----------------------------
     Game.Core = Game.Core || {};
-    if (!Game.Core.Unit && Game.Entities && Game.Entities.Unit) {
-      Game.Core.Unit = Game.Entities.Unit;
+    if (!Game.Core.Unit && Game.Core && Game.Core.Unit) {
+      Game.Core.Unit = Game.Core.Unit;
     }
 
     // Player unit (HP/power etc)
@@ -74,19 +72,14 @@
       tags: ["player"]
     });
 
-    // Attach stats to the player visual object for convenience.
-    // A lot of our new systems (AbilitySystem, CombatSystem) expect
-    // a "player object" that has both .mesh and .unit.
+
     playerVisual.unit = Game.State.playerUnit;
 
-    // We'll also expose that same player reference under Game.State.player,
-    // so newer systems can just use Game.State.player.
     Game.State.player = playerVisual;
 
     // subscribe HUD to instant stat updates
     if (Game.State.playerUnit.onStatsChanged) {
       Game.State.playerUnit.onStatsChanged(function (u) {
-        // console.log("[HUD] player statsChanged", u.hp, u.power);
         if (Game.HUD && Game.HUD.update) {
           Game.HUD.update();
         }
@@ -113,7 +106,6 @@
 
       h.unit = u;
 
-      // worldBar existing initialization:
       if (h.worldBar) {
         // initial sync
         if (typeof h.worldBar.updateFromUnit === "function") {
@@ -133,7 +125,7 @@
               Game.HUD.updateBossList();
             }
 
-            // if this guy is our current target, also refresh target HUD
+            // if this guy is my current target, also refresh target HUD
             if (Game.State.currentTarget === h) {
               if (Game.HUD && Game.HUD.updateTargetHUD) {
                 Game.HUD.updateTargetHUD();
@@ -150,14 +142,12 @@
     // HUD setup
     // -----------------------------
     // Bind HUD to the player unit.
-    // Your HUD module should listen to this unit and update DOM bars/text.
     Game.HUD.init({
       name: "Player",
       level: 60,
       unit: Game.State.playerUnit
     });
 
-    // After setting up Game.State.horsemen and giving each h.unit:
     if (Game.HUD && Game.HUD.initBossList) {
       Game.HUD.initBossList(Game.State.horsemen);
     }
@@ -166,12 +156,10 @@
     // -----------------------------
     // Death / Game Over hookup
     // -----------------------------
-    // NOTE: depends on your Game.Entities.Unit implementation exposing onDied()
     if (Game.State.playerUnit.onDied) {
       Game.State.playerUnit.onDied(function () {
         Game.State.isGameOver = true;
 
-        // stop aura ticking if we had one
         if (
           Game.State.systems.aura &&
           Game.State.systems.aura.clearAll
@@ -188,7 +176,6 @@
     // -----------------------------
     // Systems bootstrap
     // -----------------------------
-    // Prepare State.systems container if not set
     Game.State.systems = Game.State.systems || {};
 
     Game.State.systems.input = Game.Systems.InputSystem || null;
@@ -212,15 +199,16 @@
     }
 
     // Init AuraSystem so it can start tracking stacks on player
-    if (
-      Game.State.systems.aura &&
-      Game.State.systems.aura.init
-    ) {
+    if (Game.State.systems.aura && Game.State.systems.aura.init) {
+      console.log("[main] Initializing AuraSystem...");
       Game.State.systems.aura.init({
         playerUnit: Game.State.playerUnit,
         horsemen: Game.State.horsemen
       });
+    } else {
+      console.warn("[main] AuraSystem missing or has no init()");
     }
+
 
     // Init AbilitySystem so keys 1/2/3 work and UI bar appears
     // AbilitySystem expects:
@@ -238,10 +226,8 @@
       });
     }
 
-    // CameraSystem might have an init() in your version;
-    // if not, we'll just let update() drive it later.
 
-    // Restart button (still TODO reset logic)
+    // Restart button (TODO)
     const restartBtn = document.getElementById("restart-btn");
     if (restartBtn) {
       restartBtn.addEventListener("click", function () {
@@ -254,7 +240,6 @@
     Game.State.systems.target = Game.Systems.TargetSystem || null;
 
     if (Game.State.systems.target && Game.State.systems.target.init) {
-      console.log("yo")
       Game.State.systems.target.init({
         scene: Game.State.scene,
         camera: Game.State.camera,
@@ -335,11 +320,12 @@
     }
 
     // 3. Aura / debuffs (may damage player HP)
-    if (
-      gameActive &&
+    if (gameActive &&
       Game.State.systems.aura &&
-      Game.State.systems.aura.update
-    ) {
+      Game.State.systems.aura.update) {
+
+      console.log("[main] calling AuraSystem.update dt=", dt.toFixed(3));
+
       Game.State.systems.aura.update(dt, {
         playerUnit: Game.State.playerUnit,
         horsemen: Game.State.horsemen,

@@ -17,41 +17,41 @@
 
     const HORSEMEN_DATA = [
       {
-        name: "Shadow",
+        name: "Sir Zeliek",
         corner: "NE",
         colorMain: 0x1a1a1a,
-        colorTrim: 0x6a00ff, // purple
-        weaponType: "staff",
+        colorTrim: 0xffffff, // purple
+        weaponType: "sword",
         debuffId: "shadow",
-        debuffColor: "#6a00ff",
+        debuffColor: "#0xffffff",
         position: { x: cornerOffset, z: cornerOffset }
       },
       {
-        name: "Plague",
+        name: "Thane Korth'azz",
         corner: "SE",
         colorMain: 0x1a1a1a,
         colorTrim: 0x00ff00, // green
-        weaponType: "axe",
+        weaponType: "staff",
         debuffId: "plague",
         debuffColor: "#00ff00",
         position: { x: cornerOffset, z: -cornerOffset }
       },
       {
-        name: "Frost",
+        name: "Lady Blaumeux",
         corner: "NW",
         colorMain: 0x1a1a1a,
         colorTrim: 0x00c8ff, // icy blue
-        weaponType: "rune_sword",
+        weaponType: "axe",
         debuffId: "frost",
         debuffColor: "#00c8ff",
         position: { x: -cornerOffset, z: cornerOffset }
       },
       {
-        name: "Blood",
+        name: "Highlord Mograine",
         corner: "SW",
         colorMain: 0x1a1a1a,
         colorTrim: 0xff0000, // red
-        weaponType: "sword",
+        weaponType: "rune_sword",
         debuffId: "blood",
         debuffColor: "#ff0000",
         position: { x: -cornerOffset, z: -cornerOffset }

@@ -71,11 +71,68 @@
     // ----------------------------
 
     function getPlayerWorldPos() {
-      if (!Game.State || !Game.State.playerMesh) {
-        return null;
+      // preferred: playerMesh.mesh.position (because PlayerBall likely returns { mesh, ... })
+      if (Game.State &&
+        Game.State.playerMesh &&
+        Game.State.playerMesh.mesh &&
+        Game.State.playerMesh.mesh.position) {
+
+        return {
+          x: Game.State.playerMesh.mesh.position.x,
+          y: Game.State.playerMesh.mesh.position.y,
+          z: Game.State.playerMesh.mesh.position.z
+        };
       }
-      return Game.State.playerMesh.getPosition();
+
+      // fallback: if playerMesh has getPosition() from old code
+      if (Game.State &&
+        Game.State.playerMesh &&
+        typeof Game.State.playerMesh.getPosition === "function") {
+        return Game.State.playerMesh.getPosition();
+      }
+
+      console.warn("[AuraSystem] getPlayerWorldPos() could not find position");
+      return null;
     }
+
+    function getHorsemanWorldPos(horse) {
+      // preferred: horse.root.position (the group added to scene)
+      if (horse && horse.root && horse.root.position) {
+        return {
+          x: horse.root.position.x,
+          y: horse.root.position.y,
+          z: horse.root.position.z
+        };
+      }
+
+      // fallback: old API
+      if (horse && typeof horse.getPosition === "function") {
+        return horse.getPosition();
+      }
+
+      console.warn("[AuraSystem] getHorsemanWorldPos() no position for", horse);
+      return null;
+    }
+
+    function isPlayerInAuraRange(horse) {
+      const pPos = getPlayerWorldPos();
+      const hPos = getHorsemanWorldPos(horse);
+      if (!pPos || !hPos) return false;
+
+      const dist = distanceXZ(pPos, hPos);
+
+      // debug distance
+      console.log(
+        "[AuraSystem] dist to",
+        horse.name || horse.debuffId,
+        "=",
+        dist.toFixed(1),
+        "(radius", AURA_RADIUS, ")"
+      );
+
+      return dist <= AURA_RADIUS;
+    }
+
 
     function distanceXZ(a, b) {
       const dx = a.x - b.x;
@@ -83,43 +140,80 @@
       return Math.sqrt(dx * dx + dz * dz);
     }
 
-    function isPlayerInAuraRange(horse) {
-      const pPos = getPlayerWorldPos();
-      if (!pPos) return false;
-
-      const hPos = horse.getPosition();
-      const dist = distanceXZ(pPos, hPos);
-      return dist <= AURA_RADIUS;
-    }
 
     function applyAuraStack(horse, nowMs) {
-      if (!_playerUnit || !_playerUnit.alive) return;
-
       const debuffId = horse.debuffId;
       const color = horse.debuffColor || "#ffffff";
 
+      console.log("[AuraSystem] applyAuraStack() called for", debuffId, "at", nowMs);
+
+      if (!_playerUnit) {
+        console.warn("[AuraSystem] no _playerUnit in applyAuraStack");
+        return;
+      }
+
+      // If we migrated Unit to the new event-driven version,
+      // it should have .takeDamage(). Let's confirm.
+      if (typeof _playerUnit.takeDamage !== "function") {
+        console.warn("[AuraSystem] playerUnit.takeDamage is missing!", _playerUnit);
+      }
+
+      // Create entry if needed
       if (!debuffsById[debuffId]) {
         debuffsById[debuffId] = {
           color,
           stacks: 0,
           expiresAt: nowMs + STACK_DURATION * 1000
         };
+        console.log("[AuraSystem] created new debuff bucket for", debuffId);
       }
 
       // increment stacks
       debuffsById[debuffId].stacks += 1;
-
-      // refresh timer
       debuffsById[debuffId].expiresAt = nowMs + STACK_DURATION * 1000;
 
-      // deal damage based on stacks
       const stacksNow = debuffsById[debuffId].stacks;
       const dmg = stacksNow * DAMAGE_PER_STACK;
 
-      // Apply damage to the player's Unit,
-      // HUD is already listening to hpChanged.
-      _playerUnit.takeDamage(dmg);
+      console.log(
+        "[AuraSystem] debuff",
+        debuffId,
+        "now stacks=", stacksNow,
+        "expiresAt=", debuffsById[debuffId].expiresAt,
+        "dealing dmg=", dmg
+      );
+
+      // Apply damage to player
+      if (typeof _playerUnit.takeDamage === "function") {
+        _playerUnit.takeDamage(dmg);
+        console.log(
+          "[AuraSystem] dealt",
+          dmg,
+          "damage to player. player hp now",
+          _playerUnit.hp,
+          "/",
+          _playerUnit.maxHP
+        );
+      } else {
+        // fallback just in case you're still on older Unit without takeDamage()
+        _playerUnit.hp -= dmg;
+        if (_playerUnit.hp < 0) _playerUnit.hp = 0;
+
+        console.log(
+          "[AuraSystem] fallback damage applied. player hp now",
+          _playerUnit.hp,
+          "/",
+          _playerUnit.maxHP
+        );
+
+        // if you haven't yet wired HUD.onStatsChanged(),
+        // HUD may not update automatically here.
+        if (_playerUnit.onStatsChanged) {
+          _playerUnit.onStatsChanged.forEach?.(cb => cb(_playerUnit));
+        }
+      }
     }
+
 
     function decayExpiredDebuffs(nowMs) {
       for (const [id, aura] of Object.entries(debuffsById)) {
@@ -183,39 +277,76 @@
       _playerUnit = ctx.playerUnit || null;
       _horsemen = ctx.horsemen || [];
 
+      console.log("[AuraSystem.init] playerUnit:", _playerUnit);
+      console.log("[AuraSystem.init] horsemen:", _horsemen);
+      console.log("[AuraSystem.init] horsemen count:", _horsemen.length);
+
       debuffsById = {};
       tickAccumulator = 0;
     }
 
     function update(dt, ctx) {
-      if (!_playerUnit) return;
-      if (!_playerUnit.alive) {
-        return;
-      }
-
+      // just to be safe, keep refs fresh
       if (ctx && ctx.playerUnit) _playerUnit = ctx.playerUnit;
       if (ctx && ctx.horsemen) _horsemen = ctx.horsemen;
 
-      tickAccumulator += dt;
+      if (!_playerUnit) return;
 
+      // we used to check `_playerUnit.alive`, but Units don't have `.alive`.
+      // We'll consider the unit "dead" if hp <= 0.
+      const isDead = (_playerUnit.hp !== undefined && _playerUnit.hp <= 0);
+      if (isDead) {
+        // player is dead, aura stops ticking
+        return;
+      }
+
+      tickAccumulator += dt;
       const nowMs = performance.now();
 
+      // OPTIONAL DEBUG: see that update() is actually running past the guard
+      // console.log("[AuraSystem.update] tickAccumulator:", tickAccumulator.toFixed(2));
+
+      // every APPLY_INTERVAL seconds, evaluate auras and maybe add stacks
       if (tickAccumulator >= APPLY_INTERVAL) {
         tickAccumulator = 0;
 
+        // loop horsemen and see if player is in range of each
         for (const horse of _horsemen) {
-          if (isPlayerInAuraRange(horse)) {
-            applyAuraStack(horse, nowMs);
+          if (!horse) continue;
+
+          const inRange = isPlayerInAuraRange(horse);
+
+          // DEBUG RANGE CHECK
+          // We'll log once per interval so it's not insane spam:
+          if (horse && horse.name) {
+            console.log(
+              "[AuraSystem] check range:",
+              horse.name,
+              "inRange=", inRange
+            );
           }
+
+          if (inRange) {
+            console.log(
+              "[AuraSystem] in range of",
+              horse.name || horse.debuffId,
+              "-> applying aura stack"
+            );
+            applyAuraStack(horse, nowMs);
+          } else {
+            // optional: you already log inRange=false above
+          }
+
         }
       }
 
-      // Remove expired stacks
+      // after applying stacks, remove any expired ones
       decayExpiredDebuffs(nowMs);
 
-      // Update debuff UI panel
+      // update the debuff UI in the top-right
       updateDebuffUI(nowMs);
     }
+
 
     function clearAll() {
       debuffsById = {};

@@ -180,14 +180,6 @@
       }
 
       if (forwardAmount !== 0 || strafeAmount !== 0) {
-        console.log(
-          "[InputSystem] moveDir",
-          player.moveDir.x.toFixed(2),
-          player.moveDir.z.toFixed(2),
-          "yaw", player.yaw.toFixed(2),
-          "fwd", forwardAmount,
-          "strafe", strafeAmount
-        );
       }
 
 
@@ -195,7 +187,6 @@
         if (!jumpPressedThisFrame) {
           player.wantsToJump = true;
           jumpPressedThisFrame = true;
-          console.log("[InputSystem] jump requested");
         }
       }
 
@@ -211,7 +202,6 @@
     }
 
     function destroy() {
-      console.log("[InputSystem] destroy()");
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     }
