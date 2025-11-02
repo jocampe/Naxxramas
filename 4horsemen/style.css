@@ -1,364 +1,374 @@
-#hud-root {
-    position: fixed;
-    top: 10px;
-    right: 30px;
-    padding: 12px;
-    pointer-events: none;
-    /* we don't want this to block clicks/drags on canvas */
-    font-family: system-ui, sans-serif;
-    color: #fff;
-    z-index: 9999;
-}
-
-#debuff-bar {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-}
-
-.debuff-icon {
-    position: relative;
-    width: 32px;
-    height: 32px;
-    border-radius: 4px;
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
-    border: 2px solid rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1;
-    color: #fff;
-    pointer-events: none;
-}
-
-.debuff-stack {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
-}
-
-.debuff-icon {
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-}
-
-.debuff-stack {
-    font-size: 14px;
-    font-weight: 600;
-    margin-top: 4px;
-}
-
-.debuff-timer {
-    position: absolute;
-    bottom: -12px;
-    font-size: 10px;
-    color: #fff;
-    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
-}
-
-/* === PLAYER FRAME (top-left) === */
-
-#player-frame {
-    position: fixed;
-    top: 12px;
-    left: 12px;
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    color: #fff;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    z-index: 10000;
-    pointer-events: none;
-    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.7));
-}
-
-/* portrait container */
-.player-portrait {
-    position: relative;
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #ffd27a 0%, #c48a2d 60%, #5a3a00 100%);
-    border: 2px solid #2a2a2a;
-    box-shadow:
-        0 0 8px rgba(0, 0, 0, 0.8) inset,
-        0 0 4px rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* "ball" placeholder portrait */
-.player-portrait-inner {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #ffd27a 0%, #cc9933 40%, #7a4a00 80%);
-    box-shadow: 0 0 6px rgba(0, 0, 0, 0.8) inset;
-}
-
-/* little level badge bottom-left */
-.player-level {
-    position: absolute;
-    left: -6px;
-    bottom: -6px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #ffec7a 0%, #bf8a00 70%);
-    border: 2px solid #2a2a2a;
-    font-size: 12px;
-    line-height: 20px;
-    font-weight: 600;
-    color: #000;
-    text-align: center;
-    box-shadow:
-        0 0 4px rgba(0, 0, 0, 0.9),
-        0 0 2px rgba(255, 255, 255, 0.3) inset;
-}
-
-/* right side (name + bars) */
-.player-bars {
-    display: flex;
-    flex-direction: column;
-    margin-left: 8px;
-    min-width: 140px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 2px solid rgba(0, 0, 0, 0.8);
-    border-radius: 4px;
-    padding: 4px 6px 6px;
-    box-shadow:
-        0 0 10px rgba(0, 0, 0, 0.9),
-        0 0 2px rgba(255, 255, 255, 0.15) inset;
-}
-
-/* top line: player name */
-.player-name {
-    font-size: 13px;
-    font-weight: 600;
-    color: #ffeb6a;
-    text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
-    text-align: center;
-    margin-bottom: 4px;
-}
-
-.bar {
-    position: relative;
-    width: 140px;
-    height: 14px;
-    border-radius: 2px;
-    background: rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 0 4px rgba(0, 0, 0, 0.8) inset;
-    overflow: hidden;
-    margin-bottom: 4px;
-    font-family: inherit;
-}
-
-/* fill behind */
-.bar-fill {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    border-radius: 2px;
-    box-shadow:
-        0 0 6px rgba(0, 0, 0, 0.8) inset,
-        0 0 6px rgba(255, 255, 255, 0.2);
-    transition: width 0.15s linear;
-}
-
-/* HP = green */
-.hp-bar .hp-fill {
-    background: linear-gradient(#2eff2e 0%, #109010 60%, #064006 100%);
-}
-
-/* Mana = blue */
-.mana-bar .mana-fill {
-    background: linear-gradient(#6a7bff 0%, #2a32aa 60%, #0a0a40 100%);
-    margin-bottom: 0;
-}
-
-/* text overlay */
-.bar-text {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    font-size: 10px;
-    font-weight: 600;
-    line-height: 14px;
-    /* same as bar height for vertical centering */
-    color: #fff;
-    text-align: center;
-    text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
-    pointer-events: none;
-    user-select: none;
-}
-
-
-/* === EXISTING DEBUFF HUD (top-right) === */
-
-#hud-root {
-    position: fixed;
-    top: 12px;
-    right: 12px;
-    padding: 12px;
-    pointer-events: none;
-    z-index: 10000;
-    font-family: system-ui, sans-serif;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-}
-
-#debuff-bar {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-}
-
-.debuff-icon {
-    width: 32px;
-    height: 32px;
-    background: #aaa;
-    border-radius: 4px;
-    border: 2px solid rgba(0, 0, 0, 0.6);
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 600;
-    color: #fff;
-    pointer-events: none;
-}
-
-.debuff-stack {
-    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
-}
-
-.debuff-timer {
-    position: absolute;
-    bottom: -12px;
-    font-size: 10px;
-    line-height: 1;
-    color: #fff;
-    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
-    width: 100%;
-    text-align: center;
-    pointer-events: none;
-}
-
-/* Grey-out scene: apply to the canvas when dead */
-body.dim-scene canvas {
-  filter: grayscale(60%) brightness(60%);
-}
-
-/* Game Over overlay full-screen */
-#game-over-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(20,20,20,0.75);
-  z-index: 100000;
+/* === Global / reset === */
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #000;
   color: #fff;
-  font-family: system-ui, sans-serif;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
+  font-family: sans-serif;
+  user-select: none;
+}
+
+/* === HUD (player frame) === */
+.hud-root {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  width: 200px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  padding: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.8);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.hud-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.hud-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bar-row {
+  display: flex;
   flex-direction: column;
 }
 
-.game-over-content {
-  background: rgba(0,0,0,0.6);
-  border: 2px solid rgba(255,255,255,0.2);
-  border-radius: 8px;
-  padding: 24px 32px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.8);
-  min-width: 200px;
+.bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 2px;
 }
 
-.game-over-title {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 16px;
-  text-shadow: 0 0 8px rgba(0,0,0,0.9);
+.bar-track {
+  position: relative;
+  width: 100%;
+  height: 14px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 3px;
+  background: rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+/* Health bar fill */
+#hp-fill, #target-hp-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  background: linear-gradient(#a00, #600);
+}
+
+/* Power / mana / energy fill */
+#power-fill, #target-power-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  background: linear-gradient(#0044aa, #001a55);
+}
+
+/* Text overlay inside each bar */
+.bar-text-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  font-size: 10px;
   color: #fff;
+  text-align: center;
+  line-height: 14px;
+  text-shadow: 0 0 2px #000;
+  pointer-events: none;
+}
+
+/* === Debuff UI (top-right) === */
+/* Shape matches js/ui/debuffUI.js rendering */
+
+#debuff-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 140px;
+  font-size: 12px;
+  color: #fff;
+}
+
+.debuff-row {
+  display: flex;
+  align-items: center;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: #fff;
+  justify-content: space-between;
+}
+
+.debuff-color-box {
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border-radius: 2px;
+  box-shadow: 0 0 6px rgba(0,0,0,0.8);
+  flex-shrink: 0;
+}
+
+.debuff-info {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.debuff-stacks {
+  font-weight: bold;
+}
+
+.debuff-timer {
+  opacity: 0.8;
+}
+
+/* === Overlays (Game Over, Victory) === */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  display: none; /* toggled via .visible */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-family: sans-serif;
+  z-index: 999;
+}
+
+.overlay.visible {
+  display: flex;
+}
+
+.gameover-title {
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  text-shadow: 0 0 10px #000;
+}
+
+.gameover-desc {
+  font-size: 14px;
+  margin-bottom: 20px;
+  color: #ccc;
 }
 
 .restart-btn {
+  font-size: 14px;
   background: #444;
-  border: 0;
-  border-radius: 6px;
   color: #fff;
-  font-size: 16px;
-  padding: 10px 20px;
+  border: 1px solid #888;
+  border-radius: 4px;
+  padding: 8px 16px;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
 }
 
 .restart-btn:hover {
   background: #666;
 }
 
-#abilities-bar {
-  position: fixed;
-  bottom: 20px;
+/* === Ability Bar (bottom center, like action bar) === */
+.ability-bar-root {
+  position: absolute;
   left: 50%;
+  bottom: 20px;
   transform: translateX(-50%);
   display: flex;
-  gap: 12px;
-  z-index: 500;
+  gap: 8px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  padding: 8px 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.8);
+  font-family: sans-serif;
+  font-size: 11px;
+  color: #fff;
+  min-width: 200px;
+  justify-content: center;
 }
 
 .ability-slot {
-  width: 70px;
-  height: 70px;
-  border-radius: 8px;
-  border: 2px solid #222;
   position: relative;
+  width: 56px;
+  height: 56px;
+  background: rgba(20,20,20,0.8);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  box-shadow: 0 0 6px rgba(0,0,0,0.8);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-end;
   align-items: center;
-  color: white;
-  font-family: sans-serif;
+  overflow: hidden;
+}
+
+.ability-keybind {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 10px;
+  color: #fff;
+  text-shadow: 0 0 3px #000;
+  opacity: 0.9;
   font-weight: bold;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
-  transition: filter 0.2s, transform 0.2s;
 }
 
-.ability-slot:hover {
-  transform: scale(1.05);
-  filter: brightness(1.2);
+.ability-name {
+  font-size: 10px;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 0 3px #000;
+  padding-bottom: 2px;
+  line-height: 1.1;
+  max-width: 90%;
+  white-space: normal;
 }
 
-.ability-slot .ability-label {
-  font-size: 18px;
+.ability-cooldown-overlay {
   position: absolute;
-  bottom: 4px;
-  right: 6px;
-  opacity: 0.8;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  text-shadow: 0 0 4px #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
 
-.ability-slot .cooldown {
+.ability-slot.not-enough-power {
+  filter: grayscale(1) brightness(0.5);
+}
+
+/* Player HUD (already bottom-left or top-left depending on your layout) */
+/* We'll leave .hud-root as-is */
+
+/* Target HUD: position it near the player HUD */
+.enemy-hud {
   position: absolute;
-  font-size: 20px;
-  top: 50%;
-  transform: translateY(-50%);
+  left: 300px;   /* player HUD is at left:20px; so this sits to the right of it */
+  top: 20px;  /* match player's bottom so they line up */
+  width: 200px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(0,0,0,0.8);
+  font-family: sans-serif;
 }
 
-.ability-slot.on-cooldown {
-  filter: grayscale(60%) brightness(0.7);
+/* Boss list container: centered horizontally, near the top */
+.boss-hud-column {
+  position: absolute;
+  top: 40%;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none; /* so clicks pass through to world unless we change it */
+}
+
+/* Individual boss frame in the boss list */
+.boss-hud-frame {
+  width: 180px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  padding: 8px;
+  font-family: sans-serif;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(0,0,0,0.8);
+}
+
+/* Header row (name / level) */
+.boss-hud-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+/* reuse bar-row, bar-track, bar-text-overlay, etc. from your existing CSS */
+/* We just need unique fill IDs per boss, which we’ll generate dynamically */
+.boss-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  margin-bottom: 2px;
+}
+
+.boss-bar-track {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 3px;
+  background: rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+.boss-hp-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  background: linear-gradient(#a00, #600); /* same red style */
+}
+
+.boss-power-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  background: linear-gradient(#0044aa, #001a55); /* same blue style */
+}
+
+.boss-bar-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  font-size: 9px;
+  color: #fff;
+  text-align: center;
+  line-height: 12px;
+  text-shadow: 0 0 2px #000;
+  pointer-events: none;
 }
 

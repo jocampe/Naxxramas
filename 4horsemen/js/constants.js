@@ -1,31 +1,55 @@
+// js/constants.js
 (function (global) {
   const Game = global.Game || (global.Game = {});
 
-  Game.CONST = {
-    BOARD_SIZE: 200,          // <- updated
-    BALL_RADIUS: 1.2,
-    WALL_THICKNESS: 1,
-    WALL_HEIGHT: 2,
+  Game.Constants = {
+    // WORLD SIZE
+    ARENA_SIZE: 200,        // full floor side length
+    PLATFORM_SIZE: 60,      // size of the bottom step of the central platform
 
-    BASE_SPEED: 15,             // units/s (constant speed)
-    BOOST_MULT: 1.6,           // hold Shift to move faster (still instant)
+    // PLATFORM STACKING
+    PLATFORM_NUM_TIERS: 5,
+    PLATFORM_SIZE_STEP: 3,
+    PLATFORM_HEIGHT_STEP: 1.0,
 
-    // Platform
-    PLATFORM_SIZE: 60,        // width/depth (square)
-    PLATFORM_HEIGHT: 5,       // box height (thickness)
-    STAIRS_HEIGHT: 1,
-    STAIRS_WIDTH: 3,
-
+    // PILLARS
     PILLAR_HEIGHT: 5,
     PILLAR_SIZE: 6.1,
 
-    RING_POSITION_START: 3.73,
-    RING_POSITION_LEN: 1.97,
+    // PLAYER
+    PLAYER_MAX_HP: 100,
+    PLAYER_MAX_POWER: 100,
+    PLAYER_MOVE_SPEED: 12,
+    PLAYER_JUMP_FORCE: 18,
+    PLAYER_GRAVITY: 30,
+    PLAYER_RADIUS: 2,
 
-    RING_OUTER_RADIUS: 75,
-    RING_INNER_RADIUS: 74,
+    // HORSEMEN
+    HORSEMEN_MAX_HP: 200,
+    HORSEMEN_MAX_POWER: 100,
+    AURA_RADIUS: 60,
+    AURA_TICK_INTERVAL: 5,
+    AURA_DAMAGE_PER_STACK: 10,
+
+    // PHYSICS
+    GRAVITY: 9.8,
+    FLOOR_Y: 0,
+    MAX_STEP_HEIGHT: 1.1, // we used this in PhysicsSystem
+
+    // CAMERA
+    CAMERA_DISTANCE: 20,
+    CAMERA_HEIGHT: 10,
+    CAMERA_SMOOTHNESS: 0.08,
+
+    // CAMERA FIXED MODES
+    CAMERA_TOP_HEIGHT: 80,
+    CAMERA_SIDE_HEIGHT: 80,
+
+    // MOVEMENT
+    TURN_SPEED: 2.5, // radians per second, ~143 deg/sec
+
+
+    // DEBUG
+    ENABLE_DEBUG_HELPERS: false,
   };
-
-  Game.CONST.BOUNDS =
-    (Game.CONST.BOARD_SIZE / 2) - Game.CONST.BALL_RADIUS - (Game.CONST.WALL_THICKNESS / 2);
 })(window);

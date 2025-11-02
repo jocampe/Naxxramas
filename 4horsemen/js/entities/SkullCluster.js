@@ -3,9 +3,7 @@
   const C = Game.CONST;
   Game.Entities = Game.Entities || {};
 
-  // internal helper to build one skull (used by both SkullCluster and SkullHead)
   function buildSkull(scale, skullMat, darkMat, THREEref) {
-    // we'll use THREEref in case THREE is minified/aliased; just pass THREE
     const skull = new THREEref.Object3D();
 
     // Head dome (cranium)
@@ -87,17 +85,12 @@
     return group;
   };
 
-  // Just the BIG skull, so we can use it as a "head" for riders
   Game.Entities.SkullHead = function () {
     const skullMat = new THREE.MeshLambertMaterial({ color: 0x9a8f94 });
     const darkMat = new THREE.MeshLambertMaterial({ color: 0x2a1f24 });
 
-    // build at scale 1.0, then we will scale it down in Horseman
     const head = buildSkull(1.0, skullMat, darkMat, THREE);
 
-    // center it so that "neck" is near y=0. We'll nudge Y in Horseman.
-    // By default buildSkull puts the jaw slightly below y=0 and dome above,
-    // which is good — we can drop it a little onto the rider torso.
     return head;
   };
 

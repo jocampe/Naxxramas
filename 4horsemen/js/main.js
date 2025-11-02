@@ -1,115 +1,442 @@
+// js/main.js
 (function (global) {
   const Game = global.Game || (global.Game = {});
-  Game.isGameOver = Game.isGameOver || false;
-  const C = Game.CONST;
+  Game.Systems = Game.Systems || {};
+  Game.SceneBuilders = Game.SceneBuilders || {};
+  Game.State = Game.State || {};
 
-  let board, walls, ball, platform;
-  const clock = new THREE.Clock();
+  /**
+   * Game.init()
+   * - Creates scene, camera, renderer
+   * - Builds arena / player / horsemen visuals
+   * - Creates logical Units (player + enemies)
+   * - Binds HUD to the player Unit
+   * - Sets up systems and starts the main loop
+   */
+  Game.init = function init() {
+    // -----------------------------
+    // Scene / Renderer / Camera
+    // -----------------------------
+    const scene = new THREE.Scene();
+    Game.State.scene = scene;
 
-  Game.init = function () {
-    Game.Input.attach();
-    const { scene } = Game.Scene.create();
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    camera.position.set(0, 10, 20);
+    Game.State.camera = camera;
 
-    board = Game.Entities.Board(scene);
-    walls = Game.Entities.Walls(scene);
-    platform = Game.Entities.Platform(scene);
-    ball = Game.Entities.Ball(scene);
-    pillars = Game.Entities.Pillars(scene);
-    horsemen = Game.Entities.HorsemenGroup(scene);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    document.body.appendChild(renderer.domElement);
+    Game.State.renderer = renderer;
 
-    Game.Scene.attachBall(ball);
-    Game.Scene.updateCamera(0);
-    Game.Scene.render();
+    // Lighting
+    const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambient);
 
-    // HUDs
-    Game.UI.initHUD(); // debuff HUD already exists in top-right
-    Game.HUD.init({
-      name: "Player",
-      level: 1
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    dirLight.position.set(10, 20, 10);
+    scene.add(dirLight);
+
+    // -----------------------------
+    // Build world
+    // -----------------------------
+    // Arena (floor, walls, stairs, pillars...)
+    Game.State.arena = Game.SceneBuilders.Arena(scene);
+
+    // Player visual (ball)
+    // Expected return of PlayerBall: an object with .mesh AND movement state
+    // We'll store that whole object as playerMesh
+    const playerVisual = Game.SceneBuilders.PlayerBall(scene);
+    Game.State.playerMesh = playerVisual;
+
+
+    // -----------------------------
+    // Gameplay Units (stats)
+    // -----------------------------
+    Game.Core = Game.Core || {};
+    if (!Game.Core.Unit && Game.Entities && Game.Entities.Unit) {
+      Game.Core.Unit = Game.Entities.Unit;
+    }
+
+    // Player unit (HP/power etc)
+    Game.State.playerUnit = Game.Core.Unit({
+      id: "player",
+      maxHP: Game.Constants.PLAYER_MAX_HP,
+      hp: Game.Constants.PLAYER_MAX_HP,
+      maxPower: Game.Constants.PLAYER_MAX_POWER,
+      power: Game.Constants.PLAYER_MAX_POWER,
+      tags: ["player"]
     });
 
-    // start HP/mana full (100/100)
-    Game.HUD.setHP(100, 100);
-    Game.HUD.setPower(100, 100);
+    // Attach stats to the player visual object for convenience.
+    // A lot of our new systems (AbilitySystem, CombatSystem) expect
+    // a "player object" that has both .mesh and .unit.
+    playerVisual.unit = Game.State.playerUnit;
 
-    Game.Abilities.init();
+    // We'll also expose that same player reference under Game.State.player,
+    // so newer systems can just use Game.State.player.
+    Game.State.player = playerVisual;
 
+    // subscribe HUD to instant stat updates
+    if (Game.State.playerUnit.onStatsChanged) {
+      Game.State.playerUnit.onStatsChanged(function (u) {
+        // console.log("[HUD] player statsChanged", u.hp, u.power);
+        if (Game.HUD && Game.HUD.update) {
+          Game.HUD.update();
+        }
+      });
+    }
+
+    // Horsemen (the 4 bosses w/ aura wedges & worldBar sprites)
+    const horsemenGroup = Game.SceneBuilders.HorsemenGroup(scene);
+    Game.State.horsemen = horsemenGroup.horses.slice(); // copy array
+
+    // Enemy units for each horseman + sync their floating worldBar
+    Game.State.enemyUnits = [];
+    for (const h of Game.State.horsemen) {
+      // give horseman a Unit
+      const u = Game.Core.Unit({
+        id: h.debuffId || ("enemy_" + Math.random().toString(16).slice(2)),
+        name: h.name || h.debuffId || "Horseman",
+        maxHP: Game.Constants.HORSEMEN_MAX_HP,
+        hp: Game.Constants.HORSEMEN_MAX_HP,
+        maxPower: Game.Constants.HORSEMEN_MAX_POWER,
+        power: Game.Constants.HORSEMEN_MAX_POWER,
+        tags: ["enemy", "horseman"]
+      });
+
+      h.unit = u;
+
+      // worldBar existing initialization:
+      if (h.worldBar) {
+        // initial sync
+        if (typeof h.worldBar.updateFromUnit === "function") {
+          h.worldBar.updateFromUnit(u);
+        }
+
+        // SUBSCRIBE: whenever stats change, update floating bar
+        if (u.onStatsChanged) {
+          u.onStatsChanged(function (changedUnit) {
+            // update floating bar
+            if (h.worldBar && typeof h.worldBar.updateFromUnit === "function") {
+              h.worldBar.updateFromUnit(changedUnit);
+            }
+
+            // update boss list UI
+            if (Game.HUD && Game.HUD.updateBossList) {
+              Game.HUD.updateBossList();
+            }
+
+            // if this guy is our current target, also refresh target HUD
+            if (Game.State.currentTarget === h) {
+              if (Game.HUD && Game.HUD.updateTargetHUD) {
+                Game.HUD.updateTargetHUD();
+              }
+            }
+          });
+        }
+
+      }
+    }
+
+
+    // -----------------------------
+    // HUD setup
+    // -----------------------------
+    // Bind HUD to the player unit.
+    // Your HUD module should listen to this unit and update DOM bars/text.
+    Game.HUD.init({
+      name: "Player",
+      level: 60,
+      unit: Game.State.playerUnit
+    });
+
+    // After setting up Game.State.horsemen and giving each h.unit:
+    if (Game.HUD && Game.HUD.initBossList) {
+      Game.HUD.initBossList(Game.State.horsemen);
+    }
+
+
+    // -----------------------------
+    // Death / Game Over hookup
+    // -----------------------------
+    // NOTE: depends on your Game.Entities.Unit implementation exposing onDied()
+    if (Game.State.playerUnit.onDied) {
+      Game.State.playerUnit.onDied(function () {
+        Game.State.isGameOver = true;
+
+        // stop aura ticking if we had one
+        if (
+          Game.State.systems.aura &&
+          Game.State.systems.aura.clearAll
+        ) {
+          Game.State.systems.aura.clearAll();
+        }
+
+        if (Game.UI && Game.UI.Overlays) {
+          Game.UI.Overlays.showGameOver();
+        }
+      });
+    }
+
+    // -----------------------------
+    // Systems bootstrap
+    // -----------------------------
+    // Prepare State.systems container if not set
+    Game.State.systems = Game.State.systems || {};
+
+    Game.State.systems.input = Game.Systems.InputSystem || null;
+    Game.State.systems.physics = Game.Systems.PhysicsSystem || null;
+    Game.State.systems.aura = Game.Systems.AuraSystem || null;
+    Game.State.systems.camera = Game.Systems.CameraSystem || null;
+    Game.State.systems.combat = Game.Systems.CombatSystem || null;
+    Game.State.systems.floatingStatus =
+      Game.Systems.FloatingStatusSystem || null;
+    Game.State.systems.ability =
+      Game.Systems.AbilitySystem || null;
+
+    // Init InputSystem so it can start listening to keys (WASD/jump)
+    if (
+      Game.State.systems.input &&
+      Game.State.systems.input.init
+    ) {
+      Game.State.systems.input.init({
+        player: Game.State.playerMesh
+      });
+    }
+
+    // Init AuraSystem so it can start tracking stacks on player
+    if (
+      Game.State.systems.aura &&
+      Game.State.systems.aura.init
+    ) {
+      Game.State.systems.aura.init({
+        playerUnit: Game.State.playerUnit,
+        horsemen: Game.State.horsemen
+      });
+    }
+
+    // Init AbilitySystem so keys 1/2/3 work and UI bar appears
+    // AbilitySystem expects:
+    //  - playerRole (for future spec-based loadouts)
+    //  - playerObj  (must have .mesh and .unit)
+    if (
+      Game.State.systems.ability &&
+      Game.State.systems.ability.init
+    ) {
+      Game.State.systems.ability.init({
+        playerRole: Game.Core.PlayerRole
+          ? Game.Core.PlayerRole.DPS
+          : "dps", // fallback if enum missing
+        playerObj: Game.State.player
+      });
+    }
+
+    // CameraSystem might have an init() in your version;
+    // if not, we'll just let update() drive it later.
+
+    // Restart button (still TODO reset logic)
+    const restartBtn = document.getElementById("restart-btn");
+    if (restartBtn) {
+      restartBtn.addEventListener("click", function () {
+        console.log(
+          "restart clicked (TODO: implement Game reset)"
+        );
+      });
+    }
+
+    Game.State.systems.target = Game.Systems.TargetSystem || null;
+
+    if (Game.State.systems.target && Game.State.systems.target.init) {
+      console.log("yo")
+      Game.State.systems.target.init({
+        scene: Game.State.scene,
+        camera: Game.State.camera,
+        renderer: Game.State.renderer
+      });
+    }
+
+
+    // Handle resize
+    window.addEventListener("resize", onWindowResize, false);
+    function onWindowResize() {
+      if (!Game.State.camera || !Game.State.renderer) return;
+      Game.State.camera.aspect =
+        window.innerWidth / window.innerHeight;
+      Game.State.camera.updateProjectionMatrix();
+      Game.State.renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+      );
+    }
+
+    // Init timing / flags
+    Game.State.isGameOver = false;
+    Game.State.elapsedTime = 0;
+    Game._lastFrameTime = performance.now();
+
+    // Kick off loop
+    requestAnimationFrame(Game.loop);
   };
 
-  Game.animate = function animate() {
-    requestAnimationFrame(animate);
+  /**
+   * Game.loop()
+   * - Runs every frame
+   * - Computes delta time
+   * - Updates systems in a predictable order
+   * - Renders the scene
+   */
+  Game.loop = function loop(now) {
+    const dt = (now - Game._lastFrameTime) / 1000;
+    Game._lastFrameTime = now;
 
-    const dt = Math.min(0.033, clock.getDelta());
+    Game.State.elapsedTime += dt;
+    const gameActive = !Game.State.isGameOver;
 
-    if (!Game.isGameOver) {
-      // alive gameplay updates
-      if (ball && ball.updateMotion) {
-        ball.updateMotion(dt);
+    // 1. Input
+    if (
+      gameActive &&
+      Game.State.systems.input &&
+      Game.State.systems.input.update
+    ) {
+      Game.State.systems.input.update(dt, {
+        player: Game.State.playerMesh,
+        camera: Game.State.camera
+      });
+    }
 
-        if (Game.Physics && Game.Physics.solveBallVsPlatform)
-          Game.Physics.solveBallVsPlatform(ball, platform, dt);
+    // 2. Physics
+    if (
+      gameActive &&
+      Game.State.systems.physics &&
+      Game.State.systems.physics.update
+    ) {
+      Game.State.systems.physics.update(dt, {
+        player: Game.State.playerMesh,
+        arena: Game.State.arena
+      });
+    }
 
-        if (Game.Physics && Game.Physics.solveBallVsPillars)
-          Game.Physics.solveBallVsPillars(ball, pillars);
+    // 2.5 clear jump pulse
+    if (
+      gameActive &&
+      Game.State.systems.input &&
+      Game.State.systems.input.postUpdate
+    ) {
+      Game.State.systems.input.postUpdate({
+        player: Game.State.playerMesh
+      });
+    }
+
+    // 3. Aura / debuffs (may damage player HP)
+    if (
+      gameActive &&
+      Game.State.systems.aura &&
+      Game.State.systems.aura.update
+    ) {
+      Game.State.systems.aura.update(dt, {
+        playerUnit: Game.State.playerUnit,
+        horsemen: Game.State.horsemen,
+        elapsedTime: Game.State.elapsedTime
+      });
+    }
+
+    // 4. Combat tick / maintenance
+    if (
+      gameActive &&
+      Game.State.systems.combat &&
+      Game.State.systems.combat.update
+    ) {
+      Game.State.systems.combat.update(dt, {
+        playerUnit: Game.State.playerUnit,
+        enemyUnits: Game.State.enemyUnits,
+        player: Game.State.player,
+        horsemen: Game.State.horsemen
+      });
+    }
+
+    // 5. Abilities (press 1/2/3, spend power, deal dmg, heal)
+    if (
+      gameActive &&
+      Game.State.systems.ability &&
+      Game.State.systems.ability.update
+    ) {
+      Game.State.systems.ability.update(dt, {
+        player: Game.State.player,           // has .unit
+        horsemen: Game.State.horsemen        // each has .unit
+      });
+    }
+
+    // 6. Floating horsemen HP bars (sync worldBar texture from h.unit)
+    if (
+      Game.State.systems.floatingStatus &&
+      Game.State.systems.floatingStatus.update
+    ) {
+      Game.State.systems.floatingStatus.update(dt, {
+        horsemen: Game.State.horsemen,
+        camera: Game.State.camera
+      });
+    }
+
+    // 🔥 HUD refresh (player, target, boss list)
+    if (Game.HUD) {
+      if (Game.HUD.update) {
+        Game.HUD.update(); // player hp/power
       }
-
-      if (Game.Debuffs && Game.Debuffs.update) {
-        Game.Debuffs.update(dt, ball, horsemen);
+      if (Game.HUD.updateTargetHUD) {
+        Game.HUD.updateTargetHUD(); // current target box
       }
-    } else {
-      // still call Debuffs.update, but it'll early-return and just keep HUD in sync
-      if (Game.Debuffs && Game.Debuffs.update) {
-        Game.Debuffs.update(dt, ball, horsemen);
+      if (Game.HUD.updateBossList) {
+        Game.HUD.updateBossList(); // 4 boss frames in center top
       }
     }
 
-    if (!Game.isGameOver && Game.Abilities && Game.Abilities.update) {
-      Game.Abilities.update(dt);
+
+    // TargetSystem (click-to-select target)
+    if (
+      Game.State.systems.target &&
+      Game.State.systems.target.update
+    ) {
+      Game.State.systems.target.update(dt, {
+        scene: Game.State.scene,
+        camera: Game.State.camera,
+        renderer: Game.State.renderer,
+        horsemen: Game.State.horsemen
+      });
     }
 
 
-    Game.Scene.updateCamera(dt);
-    Game.Scene.render();
+    // 7. Camera follow / top / side
+    if (
+      Game.State.systems.camera &&
+      Game.State.systems.camera.update
+    ) {
+      Game.State.systems.camera.update(dt, {
+        camera: Game.State.camera,
+        player: Game.State.playerMesh,
+        renderer: Game.State.renderer
+      });
+    }
+
+    // 8. Render
+    if (
+      Game.State.renderer &&
+      Game.State.scene &&
+      Game.State.camera
+    ) {
+      Game.State.renderer.render(
+        Game.State.scene,
+        Game.State.camera
+      );
+    }
+
+    requestAnimationFrame(Game.loop);
   };
-
-
-  Game.reset = function () {
-    console.log("Restarting game...");
-
-    // 1. revive
-    Game.isGameOver = false;
-
-    // 2. reset debuffs + HP UI
-    if (Game.Debuffs && Game.Debuffs.reset) {
-      Game.Debuffs.reset();
-    }
-
-    // 3. reset power bar to 100 as well
-    if (Game.HUD && Game.HUD.setPower) {
-      Game.HUD.setPower(100, 100);
-    }
-
-    // 4. move ball back to starting position
-    //    adjust this to wherever you want spawn to be
-    if (ball) {
-      ball.position.set(0, 5, 0); // spawn spot
-      // if you track vertical velocity/jump velocity, zero it here
-      if (ball.velocity) {
-        ball.velocity.set(0, 0, 0);
-      }
-    }
-
-    // 5. remove the dim overlay class just in case UI didn't do it yet
-    document.body.classList.remove('dim-scene');
-
-    if (Game.Abilities && Game.Abilities.reset) {
-      Game.Abilities.reset();
-    }
-
-
-    console.log("Game restarted.");
-  };
-
-
 
 })(window);
